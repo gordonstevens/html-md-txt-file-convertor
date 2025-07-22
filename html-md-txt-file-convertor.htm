@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Converter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Base styles, overridden by dark mode classes */
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif; /* Using system fonts */
+      background-color: #f0f9ff; /* Light theme background: Lighter sky blue */
+      color: #1a202c; /* Default text color for light theme (gray-900) for better contrast */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    /* Dark mode styles */
+    html.dark body {
+      background-color: #1a202c; /* Dark theme background */
+      color: #e2e8f0; /* Dark theme text color */
+    }
+
+    .container {
+      background-color: #ffffff; /* Light theme container background - kept white for contrast */
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      width: 100%; /* Ensure full width on smaller screens */
+      max-width: 900px;
+      text-align: center;
+      position: relative; /* For theme switch positioning */
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    html.dark .container {
+      background-color: #2d3748; /* Dark theme container background */
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Adjusted text colors for better contrast in light theme */
+    .container h1 {
+      color: #0f172a; /* Even darker for main title (slate-900) */
+    }
+    .container p {
+      color: #1f2937; /* Darker for descriptive paragraph (gray-800) */
+    }
+    .conversion-section h2 {
+      color: #1f2937; /* Darker for section titles (gray-800) */
+    }
+    .file-list h3 {
+      color: #1f2937; /* Darker for file list titles (gray-800) */
+    }
+
+    /* Dark mode overrides for text */
+    html.dark .container h1 {
+      color: #e2e8f0; /* Dark theme text color */
+    }
+    html.dark .container p {
+      color: #cbd5e0; /* Dark theme text color */
+    }
+    html.dark .conversion-section h2 {
+      color: #e2e8f0; /* Dark theme text color */
+    }
+    html.dark .file-list h3 {
+      color: #e2e8f0; /* Dark theme text color */
+    }
+
+
+    .conversion-section {
+      margin-bottom: 40px;
+      padding: 20px;
+      border: 1px solid #a7d9f7; /* Light theme border: Slightly darker sky blue */
+      border-radius: 10px;
+      background-color: #e0f2fe; /* Light theme section background: Light blue */
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    html.dark .conversion-section {
+      background-color: #4a5568; /* Dark theme section background */
+      border-color: #4a5568; /* Dark theme border */
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      margin-top: 20px;
+      border-radius: 10px;
+    }
+    .file-input-wrapper input[type=file] {
+      font-size: 100px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .file-input-wrapper .button {
+      background-color: #4f46e5; /* Light theme button (indigo-600) */
+      color: white;
+      padding: 12px 25px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Added transform and shadow */
+      display: inline-block;
+    }
+    .file-input-wrapper .button:hover {
+      background-color: #4338ca; /* Light theme button hover (indigo-700) */
+      transform: translateY(-2px); /* Lift effect */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Subtle shadow */
+    }
+    html.dark .file-input-wrapper .button {
+      background-color: #667eea; /* Dark theme button (indigo-500) */
+      color: #e2e8f0;
+    }
+    html.dark .file-input-wrapper .button:hover {
+      background-color: #7f9cf5; /* Dark theme button hover (indigo-400) */
+      transform: translateY(-2px); /* Lift effect */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+    }
+
+    .file-list {
+      margin-top: 30px;
+      text-align: left;
+      border: 1px solid #93c5fd; /* Light theme border: blue-300 */
+      border-radius: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      padding: 15px;
+      background-color: #dbeafe; /* Light theme list background: blue-100 */
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    html.dark .file-list {
+      background-color: #2d3748; /* Dark theme list background */
+      border-color: #4a5568; /* Dark theme list border */
+    }
+
+    .file-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #bfdbfe; /* Light theme border: blue-200 */
+      transition: border-color 0.3s ease;
+    }
+    html.dark .file-list-item {
+      border-bottom-color: #4a5568; /* Dark theme border */
+    }
+    .file-list-item:last-child {
+      border-bottom: none;
+    }
+    .file-list-item .file-name {
+      font-weight: 600;
+      color: #1f2937; /* Darker text for light theme (gray-800) */
+      transition: color 0.3s ease;
+    }
+    html.dark .file-list-item .file-name {
+      color: #cbd5e0; /* Dark theme text */
+    }
+    .file-list-item .status {
+      font-size: 0.9em;
+      color: #374151; /* Darker status text for light theme (gray-700) */
+      transition: color 0.3s ease;
+    }
+    html.dark .file-list-item .status {
+      color: #a0aec0; /* Dark theme text */
+    }
+
+    .convert-button {
+      background-color: #10b981; /* Light theme button (emerald-500) */
+      color: white;
+      padding: 12px 25px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Added transform and shadow */
+      margin-top: 20px;
+      display: inline-block;
+    }
+    .convert-button:hover {
+      background-color: #059669; /* Light theme button hover (emerald-600) */
+      transform: translateY(-2px); /* Lift effect */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Subtle shadow */
+    }
+    html.dark .convert-button {
+      background-color: #48bb78; /* Dark theme button (green-500) */
+      color: #e2e8f0;
+    }
+    html.dark .convert-button:hover {
+      background-color: #68d391; /* Dark theme button hover (green-400) */
+      transform: translateY(-2px); /* Lift effect */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+    }
+    .convert-button:disabled {
+      background-color: #9ca3af; /* Light theme disabled */
+      cursor: not-allowed;
+      transform: translateY(0); /* Disable lift on disabled */
+      box-shadow: none; /* Disable shadow on disabled */
+    }
+    html.dark .convert-button:disabled {
+      background-color: #6b7280; /* Dark theme disabled */
+    }
+
+    .message-box {
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      display: none;
+      text-align: left;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .message-box.show {
+      display: block;
+    }
+    /* Message box specific colors */
+    .message-box.bg-yellow-100 { background-color: #fef3c7; color: #92400e; }
+    html.dark .message-box.bg-yellow-100 { background-color: #4a3c00; color: #fbd38d; }
+
+    .message-box.bg-red-100 { background-color: #fee2e2; color: #991b1b; }
+    html.dark .message-box.bg-red-100 { background-color: #450a0a; color: #fca5a5; }
+
+    .message-box.bg-green-100 { background-color: #d1fae5; color: #065f46; }
+    html.dark .message-box.bg-green-100 { background-color: #064e3b; color: #a7f3d0; }
+
+    /* Theme Switch Button */
+    #themeSwitch {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #4f46e5; /* Icon color (indigo-600) */
+      transition: color 0.3s ease, background-color 0.2s ease, transform 0.2s ease;
+      padding: 5px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #themeSwitch:hover {
+      color: #4338ca; /* Indigo-700 on hover */
+      background-color: rgba(0,0,0,0.05);
+      transform: scale(1.1); /* Slightly larger on hover */
+    }
+    html.dark #themeSwitch {
+      color: #667eea; /* Dark theme icon color (indigo-500) */
+    }
+    html.dark #themeSwitch:hover {
+      color: #7f9cf5; /* Indigo-400 on hover */
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    /* Privacy message styling */
+    .privacy-message {
+      background-color: #dcfce7; /* Light green background */
+      color: #047857; /* Dark green text */
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      font-weight: 600;
+      border: 1px solid #86efac; /* Green border */
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    html.dark .privacy-message {
+      background-color: #14532d; /* Darker green background */
+      color: #a7f3d0; /* Lighter green text */
+      border-color: #34d399; /* Lighter green border */
+    }
+
+    /* More Tools section styling */
+    .more-tools-section {
+      margin-top: 40px;
+      padding: 20px;
+      border: 1px solid #a7d9f7; /* Light theme border */
+      border-radius: 10px;
+      background-color: #e0f2fe; /* Light theme section background */
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    html.dark .more-tools-section {
+      background-color: #4a5568; /* Dark theme section background */
+      border-color: #4a5568; /* Dark theme border */
+    }
+    .more-tools-section h2 {
+      color: #1f2937; /* Darker text for light theme */
+    }
+    html.dark .more-tools-section h2 {
+      color: #e2e8f0; /* Dark theme text */
+    }
+    .more-tools-section ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+      justify-content: center;
+      gap: 20px; /* Space between links */
+    }
+    .more-tools-section li {
+      margin: 0;
+    }
+    .more-tools-section a {
+      display: inline-block;
+      background-color: #6366f1; /* Indigo-500 */
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .more-tools-section a:hover {
+      background-color: #4f46e5; /* Indigo-600 */
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    html.dark .more-tools-section a {
+      background-color: #818cf8; /* Indigo-400 */
+    }
+    html.dark .more-tools-section a:hover {
+      background-color: #6366f1; /* Indigo-500 */
+    }
+
+
+    /* Responsive adjustments for text and headings */
+    @media (max-width: 640px) {
+      .container {
+        padding: 20px; /* Reduce padding on smaller screens */
+      }
+      .text-3xl {
+        font-size: 2rem; /* Adjust heading size for mobile */
+      }
+      .text-2xl {
+        font-size: 1.5rem;
+      }
+      .text-xl {
+        font-size: 1.25rem;
+      }
+      .file-input-wrapper .button, .convert-button {
+        padding: 10px 20px; /* Slightly smaller buttons on mobile */
+        font-size: 0.9rem;
+      }
+      .file-list-item .file-name, .file-list-item .status {
+        font-size: 0.85em; /* Smaller text in file list */
+      }
+      .more-tools-section ul {
+        flex-direction: column; /* Stack links vertically on small screens */
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button id="themeSwitch" aria-label="Toggle theme">
+      <!-- Sun icon for light mode, Moon icon for dark mode -->
+      <svg class="w-6 h-6 sun-icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 00-.707-.293h-.001c-.282 0-.546.11-.707.316l-.707.707a1 1 0 001.414 1.414l.707-.707c.206-.16.316-.424.316-.707s-.11-.546-.316-.707zm-9.192 0a1 1 0 00-.707.293l-.707.707a1 1 0 001.414 1.414l.707-.707A1 1 0 005 10a1 1 0 00-.316-.707zM2 10a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zm15 0a1 1 0 110 2h1a1 1 0 110-2h-1zm-6.464 4.95a1 1 0 001.414 0 .997.997 0 000-1.414l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm-4.243-1.414a1 1 0 000 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 0z"></path>
+      </svg>
+      <svg class="w-6 h-6 moon-icon hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+      </svg>
+    </button>
+
+    <h1 class="text-3xl font-bold dark:text-gray-100 mb-6">File Converter</h1>
+    <p class="text-gray-600 dark:text-gray-300 mb-8">Convert between HTML, Markdown, and Text formats. Upload single or multiple files.</p>
+
+    <div class="privacy-message">
+      <p><strong>🔒 Privacy Notice:</strong> All file conversions are processed locally in your browser. Your files are never uploaded to a server, ensuring complete privacy.</p>
+    </div>
+
+    <div id="messageBox" class="message-box"></div>
+
+    <!-- HTML to Markdown Section -->
+    <div class="conversion-section">
+      <h2 class="text-2xl font-semibold dark:text-gray-200 mb-4">HTML to Markdown</h2>
+      <div class="file-input-wrapper">
+        <input type="file" id="htmlFileInput" multiple accept=".html,.htm">
+        <label for="htmlFileInput" class="button">Upload HTML Files</label>
+      </div>
+
+      <div id="htmlFileList" class="file-list hidden">
+        <h3 class="text-xl font-semibold dark:text-gray-200 mb-4">Uploaded HTML Files:</h3>
+        <div id="htmlFileListContent"></div>
+      </div>
+
+      <button id="convertHtmlToMdBtn" class="convert-button hidden" disabled>Convert HTML to Markdown</button>
+    </div>
+
+    <!-- Markdown to HTML Section -->
+    <div class="conversion-section">
+      <h2 class="text-2xl font-semibold dark:text-gray-200 mb-4">Markdown to HTML</h2>
+      <div class="file-input-wrapper">
+        <input type="file" id="markdownFileInput" multiple accept=".md,.markdown">
+        <label for="markdownFileInput" class="button">Upload Markdown Files</label>
+      </div>
+
+      <div id="markdownFileList" class="file-list hidden">
+        <h3 class="text-xl font-semibold dark:text-gray-200 mb-4">Uploaded Markdown Files:</h3>
+        <div id="markdownFileListContent"></div>
+      </div>
+
+      <button id="convertMdToHtmlBtn" class="convert-button hidden" disabled>Convert Markdown to HTML</button>
+    </div>
+
+    <!-- HTML to Text Section -->
+    <div class="conversion-section">
+      <h2 class="text-2xl font-semibold dark:text-gray-200 mb-4">HTML to Text</h2>
+      <div class="file-input-wrapper">
+        <input type="file" id="htmlToTextFileInput" multiple accept=".html,.htm">
+        <label for="htmlToTextFileInput" class="button">Upload HTML Files</label>
+      </div>
+
+      <div id="htmlToTextFileList" class="file-list hidden">
+        <h3 class="text-xl font-semibold dark:text-gray-200 mb-4">Uploaded HTML Files:</h3>
+        <div id="htmlToTextFileListContent"></div>
+      </div>
+
+      <button id="convertHtmlToTextBtn" class="convert-button hidden" disabled>Convert HTML to Text</button>
+    </div>
+
+    <!-- Text to HTML Section -->
+    <div class="conversion-section">
+      <h2 class="text-2xl font-semibold dark:text-gray-200 mb-4">Text to HTML</h2>
+      <div class="file-input-wrapper">
+        <input type="file" id="textToHtmlFileInput" multiple accept=".txt">
+        <label for="textToHtmlFileInput" class="button">Upload Text Files</label>
+      </div>
+
+      <div id="textToHtmlFileList" class="file-list hidden">
+        <h3 class="text-xl font-semibold dark:text-gray-200 mb-4">Uploaded Text Files:</h3>
+        <div id="textToHtmlFileListContent"></div>
+      </div>
+
+      <button id="convertTextToHtmlBtn" class="convert-button hidden" disabled>Convert Text to HTML</button>
+    </div>
+
+    <!-- Markdown to Text Section -->
+    <div class="conversion-section">
+      <h2 class="text-2xl font-semibold dark:text-gray-200 mb-4">Markdown to Text</h2>
+      <div class="file-input-wrapper">
+        <input type="file" id="markdownToTextFileInput" multiple accept=".md,.markdown">
+        <label for="markdownToTextFileInput" class="button">Upload Markdown Files</label>
+      </div>
+
+      <div id="markdownToTextFileList" class="file-list hidden">
+        <h3 class="text-xl font-semibold dark:text-gray-200 mb-4">Uploaded Markdown Files:</h3>
+        <div id="markdownToTextFileListContent"></div>
+      </div>
+
+      <button id="convertMdToTextBtn" class="convert-button hidden" disabled>Convert Markdown to Text</button>
+    </div>
+
+    <!-- Text to Markdown Section -->
+    <div class="conversion-section">
+      <h2 class="text-2xl font-semibold dark:text-gray-200 mb-4">Text to Markdown</h2>
+      <div class="file-input-wrapper">
+        <input type="file" id="textToMarkdownFileInput" multiple accept=".txt">
+        <label for="textToMarkdownFileInput" class="button">Upload Text Files</label>
+      </div>
+
+      <div id="textToMarkdownFileList" class="file-list hidden">
+        <h3 class="text-xl font-semibold dark:text-gray-200 mb-4">Uploaded Text Files:</h3>
+        <div id="textToMarkdownFileListContent"></div>
+      </div>
+
+      <button id="convertTextToMdBtn" class="convert-button hidden" disabled>Convert Text to Markdown</button>
+    </div>
+
+    <!-- More Tools Section -->
+    <div class="more-tools-section">
+      <h2 class="text-2xl font-semibold dark:text-gray-200 mb-4">More Useful Tools</h2>
+      <ul>
+        <li><a href="https://scribeocr.com/" target="_blank" rel="noopener noreferrer">Scribe OCR (Image/PDF to Text)</a></li>
+        <li><a href="https://stirlingpdf.io/" target="_blank" rel="noopener noreferrer">Stirling PDF (PDF Manipulation)</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- External JavaScript Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <script>
+    // --- Theme Management ---
+    const themeSwitch = document.getElementById('themeSwitch');
+    const htmlElement = document.documentElement; // The <html> tag
+    const sunIcon = themeSwitch.querySelector('.sun-icon');
+    const moonIcon = themeSwitch.querySelector('.moon-icon');
+
+    // Function to set the theme (light or dark)
+    function setTheme(theme) {
+      if (theme === 'dark') {
+        htmlElement.classList.add('dark');
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        htmlElement.classList.remove('dark');
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    // Detect OS preference or load saved theme on initial load
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        setTheme(savedTheme);
+      } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        setTheme('dark');
+      } else {
+        setTheme('light');
+      }
+    }
+
+    // Toggle theme on button click
+    themeSwitch.addEventListener('click', () => {
+      const currentTheme = htmlElement.classList.contains('dark') ? 'dark' : 'light';
+      setTheme(currentTheme === 'light' ? 'dark' : 'light');
+    });
+
+    // Initialize theme when the DOM is ready
+    document.addEventListener('DOMContentLoaded', initializeTheme);
+
+
+    // Function to show a message in the message box
+    function showMessage(message, type = 'info') {
+      const messageBox = document.getElementById('messageBox');
+      messageBox.textContent = message;
+      messageBox.className = `message-box show`; // Reset classes
+      if (type === 'error') {
+        messageBox.classList.add('bg-red-100', 'text-red-800');
+      } else if (type === 'success') {
+        messageBox.classList.add('bg-green-100', 'text-green-800');
+      } else {
+        messageBox.classList.add('bg-yellow-100', 'text-yellow-800');
+      }
+    }
+
+    // Function to hide the message box
+    function hideMessageBox() {
+      document.getElementById('messageBox').classList.remove('show');
+    }
+
+    // --- HTML to Markdown Conversion Logic ---
+    function convertHtmlToMarkdown(htmlString) {
+      try {
+        const doc = new DOMParser().parseFromString(htmlString, 'text/html');
+        let markdown = '';
+
+        const getText = (el) => el ? el.textContent.trim() : '';
+
+        doc.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(heading => {
+          const level = parseInt(heading.tagName.substring(1));
+          markdown += '#'.repeat(level) + ' ' + getText(heading) + '\n\n';
+        });
+
+        doc.querySelectorAll('p').forEach(p => {
+          markdown += getText(p) + '\n\n';
+        });
+
+        doc.querySelectorAll('a').forEach(a => {
+          const text = getText(a);
+          const href = a.getAttribute('href');
+          if (text && href) {
+            markdown += `[${text}](${href})\n`;
+          }
+        });
+
+        doc.querySelectorAll('img').forEach(img => {
+          const alt = img.getAttribute('alt') || '';
+          const src = img.getAttribute('src');
+          if (src) {
+            markdown += `![${alt}](${src})\n`;
+          }
+        });
+
+        doc.querySelectorAll('ul').forEach(ul => {
+          ul.querySelectorAll('li').forEach(li => {
+            markdown += `- ${getText(li)}\n`;
+          });
+          markdown += '\n';
+        });
+
+        // Basic bold/italic conversion using regex on the original string
+        htmlString = htmlString.replace(/<\s*(strong|b)\s*>(.*?)<\s*\/\s*(strong|b)\s*>/gim, '**$2**');
+        htmlString = htmlString.replace(/<\s*(em|i)\s*>(.*?)<\s*\/\s*(em|i)\s*>/gim, '*$2*');
+
+        return markdown.trim();
+      } catch (e) {
+        console.error("Error during HTML to Markdown conversion:", e);
+        throw new Error("Failed to convert HTML to Markdown. The HTML might be malformed.");
+      }
+    }
+
+    // --- Markdown to HTML Conversion Logic ---
+    function convertMarkdownToHtml(markdownString) {
+      try {
+        return marked.parse(markdownString);
+      } catch (e) {
+        console.error("Error during Markdown to HTML conversion:", e);
+        throw new Error("Failed to convert Markdown to HTML. The Markdown might be malformed.");
+      }
+    }
+
+    // --- HTML to Text Conversion Logic ---
+    function convertHtmlToText(htmlString) {
+      try {
+        const doc = new DOMParser().parseFromString(htmlString, 'text/html');
+        // Remove script and style tags to clean up
+        doc.querySelectorAll('script, style').forEach(el => el.remove());
+        // Return the plain text content of the body
+        return doc.body.textContent || '';
+      } catch (e) {
+        console.error("Error during HTML to Text conversion:", e);
+        throw new Error("Failed to convert HTML to Text. The HTML might be malformed.");
+      }
+    }
+
+    // --- Text to HTML Conversion Logic ---
+    function convertTextToHtml(textString) {
+      try {
+        let htmlContent = '';
+        const paragraphs = textString.split(/\n\s*\n/); // Split by double newlines for paragraphs
+        paragraphs.forEach(p => {
+          if (p.trim() !== '') {
+            htmlContent += `<p>${p.trim().replace(/\n/g, '<br>')}</p>\n`;
+          }
+        });
+        return `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<title>Converted Text</title>\n</head>\n<body>\n${htmlContent}</body>\n</html>`;
+      } catch (e) {
+        console.error("Error during Text to HTML conversion:", e);
+        throw new Error("Failed to convert Text to HTML.");
+      }
+    }
+
+    // --- Markdown to Text Conversion Logic ---
+    function convertMarkdownToText(markdownString) {
+      try {
+        // First convert markdown to HTML using marked.js
+        const html = marked.parse(markdownString);
+        // Then parse the HTML and extract text content
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        return doc.body.textContent || '';
+      } catch (e) {
+        console.error("Error during Markdown to Text conversion:", e);
+        throw new Error("Failed to convert Markdown to Text. The Markdown might be malformed.");
+      }
+    }
+
+    // --- Text to Markdown Conversion Logic ---
+    function convertTextToMarkdown(textString) {
+      try {
+        const lines = textString.split('\n');
+        let markdown = '';
+        let inParagraph = false;
+
+        lines.forEach(line => {
+          const trimmedLine = line.trim();
+          if (trimmedLine === '') {
+            if (inParagraph) {
+              markdown += '\n\n'; // End current paragraph
+              inParagraph = false;
+            }
+          } else {
+            if (!inParagraph) {
+              markdown += trimmedLine;
+              inParagraph = true;
+            } else {
+              markdown += ' ' + trimmedLine; // Continue current paragraph
+            }
+          }
+        });
+        return markdown.trim();
+      } catch (e) {
+        console.error("Error during Text to Markdown conversion:", e);
+        throw new Error("Failed to convert Text to Markdown.");
+      }
+    }
+
+
+    // --- DOM Elements ---
+    const htmlFileInput = document.getElementById('htmlFileInput');
+    const htmlFileListContent = document.getElementById('htmlFileListContent');
+    const htmlFileListContainer = document.getElementById('htmlFileList');
+    const convertHtmlToMdBtn = document.getElementById('convertHtmlToMdBtn');
+
+    const markdownFileInput = document.getElementById('markdownFileInput');
+    const markdownFileListContent = document.getElementById('markdownFileListContent');
+    const markdownFileListContainer = document.getElementById('markdownFileList');
+    const convertMdToHtmlBtn = document.getElementById('convertMdToHtmlBtn');
+
+    const htmlToTextFileInput = document.getElementById('htmlToTextFileInput');
+    const htmlToTextFileListContent = document.getElementById('htmlToTextFileListContent');
+    const htmlToTextFileListContainer = document.getElementById('htmlToTextFileList');
+    const convertHtmlToTextBtn = document.getElementById('convertHtmlToTextBtn');
+
+    const textToHtmlFileInput = document.getElementById('textToHtmlFileInput');
+    const textToHtmlFileListContent = document.getElementById('textToHtmlFileListContent');
+    const textToHtmlFileListContainer = document.getElementById('textToHtmlFileList');
+    const convertTextToHtmlBtn = document.getElementById('convertTextToHtmlBtn');
+
+    const markdownToTextFileInput = document.getElementById('markdownToTextFileInput');
+    const markdownToTextFileListContent = document.getElementById('markdownToTextFileListContent');
+    const markdownToTextFileListContainer = document.getElementById('markdownToTextFileList');
+    const convertMdToTextBtn = document.getElementById('convertMdToTextBtn');
+
+    const textToMarkdownFileInput = document.getElementById('textToMarkdownFileInput');
+    const textToMarkdownFileListContent = document.getElementById('textToMarkdownFileListContent');
+    const textToMarkdownFileListContainer = document.getElementById('textToMarkdownFileList');
+    const convertTextToMdBtn = document.getElementById('convertTextToMdBtn');
+
+
+    // --- Stored File Arrays ---
+    let uploadedHtmlFiles = []; // HTML to MD
+    let uploadedMarkdownFiles = []; // MD to HTML
+    let uploadedHtmlToTextFiles = []; // HTML to Text
+    let uploadedTextToHtmlFiles = []; // Text to HTML
+    let uploadedMarkdownToTextFiles = []; // MD to Text
+    let uploadedTextToMarkdownFiles = []; // Text to MD
+
+
+    // --- Helper to format date and time for filename ---
+    function getFormattedDateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const day = now.getDate().toString().padStart(2, '0');
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+    }
+
+    // --- Generic File Upload Handler ---
+    function handleFileUpload(fileInput, uploadedFilesArray, fileListContentElement, convertButton, allowedExtensions, conversionTypeMessage) {
+      hideMessageBox();
+      const files = fileInput.files;
+      if (files.length === 0) {
+        return;
+      }
+
+      // Clear previous files and list
+      uploadedFilesArray.length = 0; // Clear array in place
+      fileListContentElement.innerHTML = '';
+      fileListContentElement.parentElement.classList.remove('hidden'); // Show file list container
+      convertButton.classList.remove('hidden');
+      convertButton.disabled = true; // Disable until files are processed
+
+      let filesProcessed = 0;
+
+      Array.from(files).forEach(file => {
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        // Check if the file extension is allowed
+        if (!allowedExtensions.includes(`.${fileExtension}`)) {
+          showMessage(`Skipping "${file.name}": Only ${allowedExtensions.join(', ')} files are supported for ${conversionTypeMessage}.`, 'error');
+          filesProcessed++;
+          if (filesProcessed === files.length) {
+            convertButton.disabled = uploadedFilesArray.length === 0;
+          }
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          uploadedFilesArray.push({
+            name: file.name,
+            content: e.target.result
+          });
+
+          const listItem = document.createElement('div');
+          listItem.className = 'file-list-item';
+          listItem.innerHTML = `
+            <span class="file-name">${file.name}</span>
+            <span class="status text-blue-600 dark:text-blue-400">Ready for conversion</span>
+          `;
+          fileListContentElement.appendChild(listItem);
+
+          filesProcessed++;
+          if (filesProcessed === files.length) {
+            convertButton.disabled = false;
+            showMessage(`Successfully loaded ${uploadedFilesArray.length} file(s) for ${conversionTypeMessage}. Click "Convert" to proceed.`, 'success');
+          }
+        };
+        reader.onerror = (e) => {
+          console.error(`Error reading file ${file.name}:`, e);
+          showMessage(`Error reading file: ${file.name}. Please try again.`, 'error');
+          filesProcessed++;
+          if (filesProcessed === files.length) {
+            convertButton.disabled = uploadedFilesArray.length === 0;
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    // --- Generic Conversion and Download Handler ---
+    function handleConversionAndDownload(uploadedFilesArray, fileListContentElement, convertButton, convertFunction, outputExtension, baseZipFileName, conversionTypeMessage) {
+      if (uploadedFilesArray.length === 0) {
+        showMessage(`No files to convert for ${conversionTypeMessage}. Please upload files first.`, 'info');
+        return;
+      }
+
+      hideMessageBox();
+      convertButton.disabled = true;
+      showMessage(`Converting ${conversionTypeMessage} files...`, 'info');
+
+      const zip = new JSZip();
+      let convertedCount = 0;
+      let conversionFailedCount = 0;
+
+      uploadedFilesArray.forEach((file, index) => {
+        try {
+          const convertedContent = convertFunction(file.content);
+          const outputFileName = file.name.split('.').slice(0, -1).join('.') + outputExtension;
+          zip.file(outputFileName, convertedContent);
+          convertedCount++;
+
+          // Update status in the UI
+          const listItem = fileListContentElement.children[index];
+          if (listItem) {
+            listItem.querySelector('.status').textContent = 'Converted!';
+            listItem.querySelector('.status').classList.remove('text-blue-600', 'text-red-600', 'dark:text-blue-400');
+            listItem.querySelector('.status').classList.add('text-green-600', 'dark:text-green-400');
+          }
+
+        } catch (error) {
+          console.error(`Error converting ${file.name} for ${conversionTypeMessage}:`, error);
+          conversionFailedCount++;
+          // Update status in the UI
+          const listItem = fileListContentElement.children[index];
+          if (listItem) {
+            listItem.querySelector('.status').textContent = 'Conversion Failed!';
+            listItem.querySelector('.status').classList.remove('text-blue-600', 'text-green-600', 'dark:text-blue-400');
+            listItem.querySelector('.status').classList.add('text-red-600', 'dark:text-red-400');
+          }
+        }
+      });
+
+      if (convertedCount > 0) {
+        zip.generateAsync({ type: 'blob' })
+          .then(function (content) {
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            const dateTimeSuffix = getFormattedDateTime();
+            // Append date and time to the zip file name
+            a.download = `${baseZipFileName.replace('.zip', '')}_${dateTimeSuffix}.zip`;
+            a.href = url;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url); // Clean up
+
+            if (conversionFailedCount === 0) {
+              showMessage(`Successfully converted ${convertedCount} file(s) for ${conversionTypeMessage} and prepared for download.`, 'success');
+            } else {
+              showMessage(`Converted ${convertedCount} file(s) and ${conversionFailedCount} file(s) failed for ${conversionTypeMessage}. Check console for details on failed conversions.`, 'warning');
+            }
+            convertButton.disabled = false; // Re-enable button
+          })
+          .catch(error => {
+            console.error(`Error generating zip file for ${conversionTypeMessage}:`, error);
+            showMessage(`Error generating zip file for ${conversionTypeMessage}. Please try again.`, 'error');
+            convertButton.disabled = false; // Re-enable button
+          });
+      } else {
+        showMessage(`No files were successfully converted for ${conversionTypeMessage}. All ${conversionFailedCount} file(s) failed.`, 'error');
+        convertButton.disabled = false; // Re-enable button;
+      }
+    }
+
+
+    // --- Event Listeners for File Inputs ---
+    htmlFileInput.addEventListener('change', (event) => {
+      handleFileUpload(event.target, uploadedHtmlFiles, htmlFileListContent, convertHtmlToMdBtn, ['.html', '.htm'], 'HTML to Markdown conversion');
+    });
+
+    markdownFileInput.addEventListener('change', (event) => {
+      handleFileUpload(event.target, uploadedMarkdownFiles, markdownFileListContent, convertMdToHtmlBtn, ['.md', '.markdown'], 'Markdown to HTML conversion');
+    });
+
+    htmlToTextFileInput.addEventListener('change', (event) => {
+      handleFileUpload(event.target, uploadedHtmlToTextFiles, htmlToTextFileListContent, convertHtmlToTextBtn, ['.html', '.htm'], 'HTML to Text conversion');
+    });
+
+    textToHtmlFileInput.addEventListener('change', (event) => {
+      handleFileUpload(event.target, uploadedTextToHtmlFiles, textToHtmlFileListContent, convertTextToHtmlBtn, ['.txt'], 'Text to HTML conversion');
+    });
+
+    markdownToTextFileInput.addEventListener('change', (event) => {
+      handleFileUpload(event.target, uploadedMarkdownToTextFiles, markdownToTextFileListContent, convertMdToTextBtn, ['.md', '.markdown'], 'Markdown to Text conversion');
+    });
+
+    textToMarkdownFileInput.addEventListener('change', (event) => {
+      handleFileUpload(event.target, uploadedTextToMarkdownFiles, textToMarkdownFileListContent, convertTextToMdBtn, ['.txt'], 'Text to Markdown conversion');
+    });
+
+
+    // --- Event Listeners for Conversion Buttons ---
+    convertHtmlToMdBtn.addEventListener('click', () => {
+      handleConversionAndDownload(uploadedHtmlFiles, htmlFileListContent, convertHtmlToMdBtn, convertHtmlToMarkdown, '.md', 'converted_html_to_markdown.zip', 'HTML to Markdown');
+    });
+
+    convertMdToHtmlBtn.addEventListener('click', () => {
+      handleConversionAndDownload(uploadedMarkdownFiles, markdownFileListContent, convertMdToHtmlBtn, convertMarkdownToHtml, '.html', 'converted_markdown_to_html.zip', 'Markdown to HTML');
+    });
+
+    convertHtmlToTextBtn.addEventListener('click', () => {
+      handleConversionAndDownload(uploadedHtmlToTextFiles, htmlToTextFileListContent, convertHtmlToTextBtn, convertHtmlToText, '.txt', 'converted_html_to_text.zip', 'HTML to Text');
+    });
+
+    convertTextToHtmlBtn.addEventListener('click', () => {
+      handleConversionAndDownload(uploadedTextToHtmlFiles, textToHtmlFileListContent, convertTextToHtmlBtn, convertTextToHtml, '.html', 'converted_text_to_html.zip', 'Text to HTML');
+    });
+
+    convertMdToTextBtn.addEventListener('click', () => {
+      handleConversionAndDownload(uploadedMarkdownToTextFiles, markdownToTextFileListContent, convertMdToTextBtn, convertMarkdownToText, '.txt', 'converted_markdown_to_text.zip', 'Markdown to Text');
+    });
+
+    convertTextToMdBtn.addEventListener('click', () => {
+      handleConversionAndDownload(uploadedTextToMarkdownFiles, textToMarkdownFileListContent, convertTextToMdBtn, convertTextToMarkdown, '.md', 'converted_text_to_markdown.zip', 'Text to Markdown');
+    });
+
+  </script>
+</body>
+</html>
